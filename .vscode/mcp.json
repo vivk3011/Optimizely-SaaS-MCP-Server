@@ -1,0 +1,12 @@
+{
+  "servers": {
+    "optimizely-graph-cd": {
+      "command": "node",
+      "args": ["dist/cd-graph-index.js"]
+    },
+    "optimizely-cma-restapi": {
+      "command": "node",
+      "args": ["dist/cm-restapi-index.js"]
+    }
+  }
+}

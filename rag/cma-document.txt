@@ -1,0 +1,238 @@
+Optimizely CMS (SaaS) CMA REST Write Operations — RAG Notes
+Date: 2026-04-29
+Scope: Compiled from provided Optimizely CMS (SaaS) documentation links only.
+
+============================================================
+1) Core API and Auth
+============================================================
+- Base CMA REST URL used across docs:
+  https://api.cms.optimizely.com/v1
+- GraphQL is read/query in this project; write operations are done via CMA REST endpoints.
+- Docs repeatedly reference bearer-token based authorization from CMS auth docs.
+- Common content types for write requests:
+  - application/json
+  - application/merge-patch+json (PATCH)
+  - multipart/form-data (media upload)
+
+Common optional headers seen across write operations:
+- Prefer: return=representation
+- If-Match / If-Unmodified-Since (optimistic concurrency)
+- cms-skip-validation (content sources)
+- cms-permanent-delete (content delete)
+- cms-accept-resource (access deleted content)
+
+============================================================
+2) Content Types REST (manage-content-types-using-the-rest-api)
+============================================================
+Endpoint family:
+- POST   /contenttypes
+- GET    /contenttypes
+- GET    /contenttypes/{key}
+- PATCH  /contenttypes/{key}
+- DELETE /contenttypes/{key}
+
+Key behaviors:
+- Create requires unique key + baseType.
+- PATCH uses application/merge-patch+json.
+- key and baseType cannot be changed after creation.
+- Built-in/system types cannot be deleted.
+- Supports accessRights (role/user/application restrictions).
+- Supports displayMode (available/hidden) and editorSettings (example: richText preset).
+
+============================================================
+3) Property Format and Property Groups
+============================================================
+Property formats (property-format):
+- Read-only catalog managed by system.
+- Used in content type property definitions via format.
+- Key endpoints:
+  - GET /propertyformats
+  - GET /propertyformats/{key}
+
+Property groups (property-groups-saas):
+- Organize editor UI groups for properties.
+- Endpoints:
+  - POST   /propertygroups
+  - GET    /propertygroups
+  - GET    /propertygroups/{key}
+  - PATCH  /propertygroups/{key}
+  - DELETE /propertygroups/{key}
+- System groups (source: _system) are read-only/non-deletable.
+
+============================================================
+4) Content Model and Version Concepts (content-saas)
+============================================================
+- Content has non-versioned metadata (content node) and versioned fields.
+- Key version fields: locale, version id, displayName, status, published/expired, properties, binding.
+- Status values include: draft, ready, inReview, rejected, scheduled, published, previouslyPublished.
+- Content is hierarchical (container) and can be asset-owned (owner).
+- Property payloads are strongly tied to content type schema and typed values.
+
+============================================================
+5) Create Content/Page Flow (create-content-and-a-page-using-the-api)
+============================================================
+Typical bootstrap sequence:
+1. Create content type (example _page type).
+2. Create content item via POST /content with initialVersion.
+3. Optionally configure website/host in UI.
+4. Run Graph full sync job to surface in Graph during beta guidance.
+
+Create content payload essentials:
+- key (UUID-like string used by examples)
+- contentType
+- container
+- initialVersion:
+  - displayName
+  - locale (for localized types)
+  - properties with { value: ... }
+
+============================================================
+6) Manage Content REST (manage-content-using-the-rest-api)
+============================================================
+Primary endpoints:
+- POST   /content                                  (create node + initial version)
+- POST   /content/{key}:copy                       (copy content)
+- GET    /content/{key}                            (metadata/node)
+- PATCH  /content/{key}                            (move/update metadata like container)
+- GET    /content/{key}/items                      (children)
+- GET    /content/{key}/path                       (hierarchy path)
+- GET    /content/{key}/versions                   (list versions)
+- GET    /content/{key}/versions/{versionId}       (get version)
+- POST   /content/{key}/versions                   (new version)
+- PATCH  /content/{key}/versions/{versionId}       (patch version)
+- DELETE /content/{key}                            (soft delete by default)
+- POST   /content/{key}:undelete                   (restore)
+- DELETE /content/{key}/versions/{versionId}
+- DELETE /content/{key}/locales/{locale}
+
+Status transition endpoints:
+- POST /content/{key}/versions/{versionId}:ready
+- POST /content/{key}/versions/{versionId}:publish
+- POST /content/{key}/versions/{versionId}:draft
+- POST /content/{key}/versions/{versionId}:approve
+- POST /content/{key}/versions/{versionId}:reject
+
+Important constraints:
+- Do not PATCH status directly; use transition endpoints.
+- publish supports delayUntil for scheduling.
+- publish/approve/reject can support force=true with elevated rights.
+- ETag with If-Match recommended for transition/write concurrency safety.
+
+============================================================
+7) Manage Media REST (manage-media-using-the-rest-api)
+============================================================
+Create media:
+- POST /content
+- Content-Type: multipart/form-data
+- Must include two parts:
+  - content (JSON)
+  - file (binary)
+- Media cannot be created without file part.
+
+Update media binary/version:
+- POST /content/{key}/versions
+- multipart/form-data with content + file.
+
+Download media binary:
+- GET /content/{key}/versions/{versionId}/media
+
+Validation and limits:
+- File extension checked against media content type (mediaFileExtensions).
+- API max request size mentioned as 500 MB, with practical recommendation for smaller assets.
+
+============================================================
+8) Blueprints REST (manage-blueprints-using-the-rest-api)
+============================================================
+Endpoint family:
+- POST   /blueprints
+- GET    /blueprints
+- GET    /blueprints/{key}
+- PATCH  /blueprints/{key}
+- DELETE /blueprints/{key}
+
+Data model highlights:
+- key, displayName, contentType, content(properties/binding/composition), timestamps.
+- contentType is settable at creation and read-only afterward.
+- Supports concurrency headers and return=representation.
+
+============================================================
+9) Content Sources REST (manage-content-sources-using-the-rest-api)
+============================================================
+Endpoint family:
+- POST   /contentsources
+- GET    /contentsources
+- GET    /contentsources/{key}
+- PATCH  /contentsources/{key}
+- DELETE /contentsources/{key}
+
+Model highlights:
+- key, displayName, sourceKey, sourceType, type(graph), baseType.
+- propertyMappings: key, displayName, keyFormat.
+- type currently documented as graph.
+- Works with Graph content sources and requires Graph-side source/type setup first.
+- Optional cms-skip-validation header for reference validation flexibility.
+
+============================================================
+10) Content Type Bindings REST (manage-content-type-bindings-using-the-rest-api)
+============================================================
+Endpoint family:
+- POST   /contenttypebindings
+- GET    /contenttypebindings
+- GET    /contenttypebindings/{key}
+- PATCH  /contenttypebindings/{key}
+- DELETE /contenttypebindings/{key}
+
+Model highlights:
+- from (source type), to (target type), propertyMappings.
+- propertyMappings entries map target path -> source path.
+- Nested mappings can reference another binding via binding property.
+- Mapped properties must be compatible types.
+
+============================================================
+11) Bind Content with Existing Bindings (bind-content-using-the-rest-api)
+============================================================
+Where binding is applied:
+- In content version payloads using binding field.
+- Works for top-level content, component properties, and list/area components.
+
+Binding object shape (concept):
+- contentTypeBinding: binding key
+- source: cms://content/{key}?loc={locale}
+
+Applied during:
+- POST /content (create)
+- PATCH /content/{key}/versions/{versionId} (update existing version)
+
+============================================================
+12) Implementation Notes for MCP Write Tools
+============================================================
+Recommended write-tool groups to add later:
+- content-type CRUD tool(s)
+- content CRUD + versions + status transitions
+- media multipart upload/version tool(s)
+- blueprint CRUD tool(s)
+- content-source CRUD tool(s)
+- content-type-binding CRUD tool(s)
+- bind-content helper tool(s)
+
+Cross-cutting requirements to enforce:
+- Bearer auth and endpoint validation.
+- Header support per operation (If-Match, Prefer, cms-*).
+- Merge-patch semantics for PATCH.
+- Multipart builder for media endpoints.
+- Error handling for validation/status transition conflicts.
+
+============================================================
+13) Source Links (provided by user)
+============================================================
+1. https://docs.developers.optimizely.com/content-management-system/v1.0.0-CMS-SaaS/docs/manage-content-types-using-the-rest-api
+2. https://docs.developers.optimizely.com/content-management-system/v1.0.0-CMS-SaaS/docs/property-format
+3. https://docs.developers.optimizely.com/content-management-system/v1.0.0-CMS-SaaS/docs/property-groups-saas
+4. https://docs.developers.optimizely.com/content-management-system/v1.0.0-CMS-SaaS/docs/content-saas
+5. https://docs.developers.optimizely.com/content-management-system/v1.0.0-CMS-SaaS/docs/create-content-and-a-page-using-the-api
+6. https://docs.developers.optimizely.com/content-management-system/v1.0.0-CMS-SaaS/docs/manage-content-using-the-rest-api
+7. https://docs.developers.optimizely.com/content-management-system/v1.0.0-CMS-SaaS/docs/manage-media-using-the-rest-api
+8. https://docs.developers.optimizely.com/content-management-system/v1.0.0-CMS-SaaS/docs/manage-blueprints-using-the-rest-api
+9. https://docs.developers.optimizely.com/content-management-system/v1.0.0-CMS-SaaS/docs/manage-content-sources-using-the-rest-api
+10. https://docs.developers.optimizely.com/content-management-system/v1.0.0-CMS-SaaS/docs/bind-content-using-the-rest-api
+11. https://docs.developers.optimizely.com/content-management-system/v1.0.0-CMS-SaaS/docs/manage-content-type-bindings-using-the-rest-api

@@ -1,0 +1,20 @@
+{
+  "name": "saas-optimizely-mcp-server-1",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "main": "dist/cd-graph-index.js",
+  "scripts": {
+    "start": "node dist/cd-graph-index.js",
+    "build": "tsc",
+    "self-test": "node dist/cd-graph-index.js --self-test"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.17.4",
+    "dotenv": "^16.4.5"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "typescript": "^5.8.3"
+  }
+}

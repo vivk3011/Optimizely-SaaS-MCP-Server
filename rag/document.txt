@@ -1,0 +1,58 @@
+Here are the official and authoritative reference links you should use to get the GraphQL schema for Optimizely SaaS CMS (Optimizely Graph).
+
+✅ Primary Reference: GraphQL Schema Documentation (Official)
+Optimizely Graph – GraphQL Schema
+
+Documentation explaining the schema structure, field conventions, reserved fields, and how schemas are generated per CMS site
+🔗 Reference link:
+https://docs.developers.optimizely.com/platform-optimizely/docs/graphql-schema
+
+This is the main schema reference and should be your starting point.
+
+✅ How to Access Your Actual Schema (Most Important)
+Optimizely SaaS CMS generates a unique GraphQL schema per site, based on your content types. To view the real schema:
+GraphiQL (Schema Explorer UI)
+
+🔗 GraphiQL endpoint:
+https://cg.optimizely.com/app/graphiql?auth=5mfSAWUerG5GuKHpNs4kNzVAU5EfZERnhRyHSsQQMtpSTreA
+
+
+Use the Docs tab to browse types, fields, filters, and relationships
+ [docs.devel...mizely.com]
+
+GraphQL API Endpoint
+
+🔗 API endpoint:
+https://cg.optimizely.com/content/v2?auth=5mfSAWUerG5GuKHpNs4kNzVAU5EfZERnhRyHSsQQMtpSTreA
+
+
+
+ [docs.devel...mizely.com]
+
+✅ Supporting References (Useful for Understanding & Exploration)
+Get Started & Schema Exploration
+
+How to connect, explore the schema, and run introspection queries
+🔗
+https://docs.developers.optimizely.com/platform-optimizely/docs/getting-started-with-graphql-api
+
+GraphQL API Overview (Schema Generation Details)
+
+Explains how schemas are generated from CMS content models
+🔗
+https://docs.developers.optimizely.com/platform-optimizely/docs/using-the-graphql-api
+
+
+✅ Key Notes (Important to Know)
+
+There is no single static schema file for Optimizely SaaS CMS
+Every environment has a dynamically generated schema
+Best practice is to:
+
+Use GraphiQL Docs tab
+Or run GraphQL introspection queries
+
+
+Example introspection query:
+GraphQL{}  __schema {    types {      name      kind    }  }Show more lines
+ [docs.devel...mizely.com]
